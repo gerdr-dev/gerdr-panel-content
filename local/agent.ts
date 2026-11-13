@@ -2,8 +2,23 @@
 
 import { contentOfSession, find, folderOf, libraryDir, loadContents, loadProfile, profileText, STATUSES } from "./_store";
 import { addPost, edit } from "./contents";
+import { list as writingList, read as writingRead, save as writingSave } from "./writing";
 
 export const tools = {
+  writing_read: {
+    description:
+      "Read one of the user's writing preferences (写法) as they have it now: name is 写作偏好 (general) or a platform (小红书, 抖音, 公众号…). Leave name out to list them. Returns the text and an etag for writing_update.",
+    input: { type: "object", properties: { name: { type: "string" } } },
+  },
+  writing_update: {
+    description:
+      "Save a lasting preference the user stated (\"以后小红书都…\", \"我不喜欢…\") into their writing preferences: the whole new text of that file (read it first with writing_read and pass its etag; change only the part it concerns, usually under 我的偏好). A new platform name creates its file. Not for a request about one content (that goes in its 稿子.md).",
+    input: {
+      type: "object",
+      properties: { name: { type: "string" }, text: { type: "string" }, etag: { type: "string" } },
+      required: ["name", "text"],
+    },
+  },
   content_info: {
     description:
       "The content you work on (or the one with `id`): its name, status, folder, publish records, and the creator's positioning (我的定位) to write from. Call it before writing anything.",
@@ -36,6 +51,15 @@ export const tools = {
     },
   },
 };
+
+export function writing_read(input: { name?: string }, ctx: Ctx) {
+  return input.name ? writingRead({ name: input.name }, ctx) : writingList(undefined, ctx);
+}
+
+export function writing_update(input: { name: string; text: string; etag?: string }, ctx: Ctx) {
+  writingSave(input, ctx);
+  return { ok: true, gerdrCard: { title: `记下了：${input.name}的写法`, body: "在面板的「写法」页能看到和改", tone: "ok" } };
+}
 
 function mine(ctx: Ctx, id?: string) {
   if (id) return find(loadContents(ctx), id);

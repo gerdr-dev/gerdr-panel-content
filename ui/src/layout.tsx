@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { FileText, FolderOpen, UserRound } from "lucide-react";
+import { FileText, FolderOpen, PenLine, UserRound } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import clsx from "clsx";
 import { onShowSession, usePhoneMenu } from "@gerdr/core";
@@ -10,6 +10,7 @@ import type { Content } from "./lib/data";
 const MENU = [
   { to: "/", label: "内容", icon: FileText, end: true },
   { to: "/library", label: "资料库", icon: FolderOpen, end: true },
+  { to: "/writing", label: "写法", icon: PenLine, end: true },
   { to: "/profile", label: "我的定位", icon: UserRound, end: true },
 ];
 
