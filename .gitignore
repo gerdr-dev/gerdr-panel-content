@@ -1,0 +1,17 @@
+# Runtime state, not code: generated files. This person's data and settings are in user/, which ignores itself
+# (Gerdr writes user/.gitignore); data/ is where they were before
+data/
+output/
+# A Gerdr from before user/ wrote its own .gitignore doesn't write it: ignored here too
+user/
+.playwright-cli/
+node_modules/
+
+# Gerdr's own files, installed into every panel and kept up to date by Gerdr: a copy here would count as edited and
+# stop being upgraded
+.builtin.json
+AGENTS.md
+CLAUDE.md
+FUNCTIONS.md
+local/ctx.d.ts
+ui/src/gerdr-core.d.ts

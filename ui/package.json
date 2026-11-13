@@ -1,0 +1,14 @@
+{
+  "name": "gerdr-panel-content",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A Gerdr panel for creators: each content is a folder (brief, copy, images, videos), handed to AI to make, with your positioning and where it was published.",
+  "dependencies": {
+    "clsx": "2.1.1",
+    "lucide-react": "0.525.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "7.18.5"
+  }
+}

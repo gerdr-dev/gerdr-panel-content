@@ -1,0 +1,1 @@
+{ "on": "gerdr/session.*", "fn": "contents.onSession", "name": "AI 做完了标出来" }
