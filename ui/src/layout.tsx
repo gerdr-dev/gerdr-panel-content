@@ -40,9 +40,7 @@ export default function Layout() {
             key={it.to}
             to={it.to}
             end={it.end}
-            className={() =>
-              clsx("flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] hover:bg-accent/60", active(it.to) && "bg-accent font-medium")
-            }
+            className={() => clsx("flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] hover:bg-accent/60", active(it.to) && "bg-accent font-medium")}
           >
             <it.icon className="size-3.5 text-muted-foreground" />
             {it.label}
@@ -50,21 +48,28 @@ export default function Layout() {
         ))}
       </nav>
       <main className="flex min-w-0 flex-1 flex-col">
-        <nav className="flex shrink-0 gap-1 overflow-x-auto border-b bg-sidebar p-1 md:hidden">
-          {MENU.map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              end={it.end}
-              className={() =>
-                clsx("flex shrink-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px]", active(it.to) ? "bg-accent font-medium" : "text-muted-foreground")
-              }
-            >
-              <it.icon className="size-3.5" />
-              {it.label}
-            </NavLink>
-          ))}
-        </nav>
+        {/* On a content's own page the row steps aside: it has its back arrow, the phone drawer has these pages,
+            and every strip on top is a strip less for the copy being edited */}
+        {!path.startsWith("/c/") && (
+          <nav className="flex shrink-0 gap-1 overflow-x-auto border-b bg-sidebar p-1 md:hidden">
+            {MENU.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                end={it.end}
+                className={() =>
+                  clsx(
+                    "flex shrink-0 items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px]",
+                    active(it.to) ? "bg-accent font-medium" : "text-muted-foreground",
+                  )
+                }
+              >
+                <it.icon className="size-3.5" />
+                {it.label}
+              </NavLink>
+            ))}
+          </nav>
+        )}
         <div className="min-h-0 flex-1">
           <Outlet />
         </div>

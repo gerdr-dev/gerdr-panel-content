@@ -60,27 +60,53 @@ export default function ContentPage() {
   ];
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2 max-md:px-2">
+      {/* One row on a phone too: the title truncates, the status is a select, folder-in-Finder (the computer's, not
+          the phone's) goes, so the copy below keeps the screen */}
+      <header className="flex shrink-0 items-center gap-2 border-b px-4 py-2 max-md:gap-1 max-md:px-2 max-md:py-1">
         <Link to="/" className="rounded-md p-1 text-muted-foreground hover:bg-accent" aria-label="返回">
           <ArrowLeft className="size-4" />
         </Link>
         <Title c={c} />
-        <div className="flex gap-0.5 rounded-lg bg-muted p-0.5">
+        <select
+          value={c.status}
+          onChange={(e) => setStatus(e.target.value as Status)}
+          className="shrink-0 rounded-md bg-muted px-1.5 py-1 text-[12px] outline-none md:hidden"
+          aria-label="状态"
+        >
+          {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
+            <option key={s} value={s}>
+              {STATUS_LABEL[s]}
+            </option>
+          ))}
+        </select>
+        <div className="flex shrink-0 gap-0.5 rounded-lg bg-muted p-0.5 max-md:hidden">
           {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
             <button
               key={s}
               onClick={() => setStatus(s)}
-              className={clsx("rounded-md px-2 py-0.5 text-[12px]", c.status === s ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              className={clsx(
+                "rounded-md px-2 py-0.5 text-[12px]",
+                c.status === s ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
             >
               {STATUS_LABEL[s]}
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-1">
-          <Button onClick={() => setHandoff(true)}>
+        <div className="ml-auto flex shrink-0 items-center gap-1 max-md:gap-0">
+          <Button className="max-md:hidden" onClick={() => setHandoff(true)}>
             <Sparkles className="size-3.5" /> 交给 AI
           </Button>
-          <Button variant="ghost" size="icon" title="在 Finder 中显示" onClick={() => run("contents.reveal", { id: c.id }).catch((e) => toast.error(e.message))}>
+          <Button variant="ghost" size="icon" className="md:hidden" title="交给 AI" onClick={() => setHandoff(true)}>
+            <Sparkles className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="max-md:hidden"
+            title="在 Finder 中显示"
+            onClick={() => run("contents.reveal", { id: c.id }).catch((e) => toast.error(e.message))}
+          >
             <FolderOpen className="size-4" />
           </Button>
           <Button variant="ghost" size="icon" title="删掉这条内容" onClick={remove}>
@@ -98,7 +124,11 @@ export default function ContentPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={clsx("-mb-px border-b-2 py-1.5", cls, tab === t ? "border-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}
+                className={clsx(
+                  "-mb-px border-b-2 py-1.5",
+                  cls,
+                  tab === t ? "border-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
               >
                 {t === "chat" && session?.status === "running" ? (
                   <span className="flex items-center gap-1">
@@ -150,7 +180,11 @@ function Title({ c }: { c: Content }) {
       onKeyDown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" && setEdit(undefined))}
     />
   ) : (
-    <button className="min-w-0 truncate rounded-md px-1 text-left text-[15px] font-semibold hover:bg-accent/60" title="点一下改名" onClick={() => setEdit(c.title)}>
+    <button
+      className="min-w-0 truncate rounded-md px-1 text-left text-[15px] font-semibold hover:bg-accent/60 max-md:flex-1 max-md:text-[14px]"
+      title="点一下改名"
+      onClick={() => setEdit(c.title)}
+    >
       {c.title}
     </button>
   );
