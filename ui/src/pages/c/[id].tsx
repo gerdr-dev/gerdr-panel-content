@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, FolderOpen, MessageSquare, PanelRightClose, PanelRightOpen, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, FolderOpen, MessageSquare, PanelRightClose, PanelRightOpen, Pencil, Sparkles, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import { ArtifactsFolder, PhoneBar, SessionChat, toast, useSession } from "@gerdr/core";
 import { Button } from "../../components/Button";
 import { Handoff } from "../../components/Handoff";
-import { MoreMenu } from "../../components/MoreMenu";
+import { Menu, MoreMenu } from "../../components/MoreMenu";
 import { Posts } from "../../components/Posts";
 import { run } from "../../lib/gerdr";
-import { STATUS_LABEL, useRun, type Content, type Status } from "../../lib/data";
+import { STATUS_LABEL, STATUS_TONE, useRun, type Content, type Status } from "../../lib/data";
 
 type Tab = "files" | "chat" | "posts";
 
@@ -23,6 +23,7 @@ export default function ContentPage() {
   const [tab, setTab] = useState<Tab>("files");
   const [handoff, setHandoff] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
+  const [rename, setRename] = useState<string>(); // the title being edited (undefined: not editing)
   const session = useSession(c?.session);
 
   // Opened: "AI 做完了" is seen
@@ -62,26 +63,14 @@ export default function ContentPage() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* On a phone this rides in Gerdr's top bar right of ☰ (PhoneBar; that bar is up exactly below md), so the copy
-          below keeps the screen: one row, the title truncates, the status is a select, folder-in-Finder (the
-          computer's, not the phone's) goes */}
+          below keeps the screen. There it holds only ← title ⋯, the title on up to two lines; the status and 交给 AI
+          go to the tab row, folder-in-Finder (the computer's, not the phone's) goes */}
       <PhoneBar>
         <header className="flex shrink-0 items-center gap-2 border-b px-4 py-2 max-md:min-w-0 max-md:flex-1 max-md:gap-0.5 max-md:border-0 max-md:p-0">
           <Link to="/" className="rounded-md p-1 text-muted-foreground hover:bg-accent" aria-label="返回">
             <ArrowLeft className="size-4" />
           </Link>
-          <Title c={c} />
-          <select
-            value={c.status}
-            onChange={(e) => setStatus(e.target.value as Status)}
-            className="shrink-0 rounded-md bg-muted px-1.5 py-1 text-[12px] outline-none md:hidden"
-            aria-label="状态"
-          >
-            {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
+          <Title c={c} edit={rename} setEdit={setRename} />
           <div className="flex shrink-0 gap-0.5 rounded-lg bg-muted p-0.5 max-md:hidden">
             {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
               <button
@@ -100,9 +89,6 @@ export default function ContentPage() {
             <Button className="max-md:hidden" onClick={() => setHandoff(true)}>
               <Sparkles className="size-3.5" /> 交给 AI
             </Button>
-            <Button variant="ghost" size="icon" className="md:hidden" title="交给 AI" onClick={() => setHandoff(true)}>
-              <Sparkles className="size-4" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -115,14 +101,19 @@ export default function ContentPage() {
             <Button variant="ghost" size="icon" className="max-md:hidden" title={chatOpen ? "收起对话" : "展开对话"} onClick={() => setChatOpen(!chatOpen)}>
               {chatOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
             </Button>
-            {/* Deleting sits behind ⋯: a stray tap on a phone's crowded header shouldn't be one step from it */}
-            <MoreMenu items={[{ label: "删掉这条内容", icon: <Trash2 className="size-3.5" />, danger: true, onSelect: remove }]} />
+            {/* Renaming is also a tap on the title, which nobody guesses; deleting sits here so a stray tap can't reach it */}
+            <MoreMenu
+              items={[
+                { label: "改名", icon: <Pencil className="size-3.5" />, onSelect: () => setRename(c.title) },
+                { label: "删掉这条内容", icon: <Trash2 className="size-3.5" />, danger: true, onSelect: remove },
+              ]}
+            />
           </div>
         </header>
       </PhoneBar>
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex shrink-0 gap-3 border-b px-4 text-[13px] max-md:px-2">
+          <div className="flex shrink-0 items-center gap-3 border-b px-4 text-[13px] max-md:pr-1 max-md:pl-2">
             {tabs.map(([t, label, cls]) => (
               <button
                 key={t}
@@ -142,6 +133,15 @@ export default function ContentPage() {
                 )}
               </button>
             ))}
+            <div className="ml-auto flex items-center gap-1 md:hidden">
+              <StatusMenu status={c.status} onChange={setStatus} />
+              <button
+                onClick={() => setHandoff(true)}
+                className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[12px] font-medium text-primary-foreground"
+              >
+                <Sparkles className="size-3.5" /> 交给 AI
+              </button>
+            </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {tab === "files" && <ArtifactsFolder dir={c.folder} />}
@@ -165,9 +165,27 @@ export default function ContentPage() {
   );
 }
 
-/** The name: click to rename (its folder follows). */
-function Title({ c }: { c: Content }) {
-  const [edit, setEdit] = useState<string>();
+/** The status as a small pill in its colour, a menu to change it (the phone's tab row). */
+function StatusMenu({ status, onChange }: { status: Status; onChange: (s: Status) => void }) {
+  return (
+    <Menu
+      items={(Object.keys(STATUS_LABEL) as Status[]).map((s) => ({ label: STATUS_LABEL[s], checked: s === status, onSelect: () => onChange(s) }))}
+      trigger={(open, toggle) => (
+        <button
+          onClick={toggle}
+          aria-label="状态"
+          className={clsx("flex h-7 items-center gap-0.5 rounded-md bg-muted pr-1 pl-2 text-[12px] font-medium", STATUS_TONE[status], open && "bg-accent")}
+        >
+          {STATUS_LABEL[status]}
+          <ChevronDown className="size-3.5 opacity-60" />
+        </button>
+      )}
+    />
+  );
+}
+
+/** The name: tap it, or ⋯ → 改名, to rename (its folder follows). On a phone up to two lines, so a long one reads. */
+function Title({ c, edit, setEdit }: { c: Content; edit: string | undefined; setEdit: (v: string | undefined) => void }) {
   const save = () => {
     const t = edit?.trim();
     setEdit(undefined);
@@ -184,7 +202,7 @@ function Title({ c }: { c: Content }) {
     />
   ) : (
     <button
-      className="min-w-0 truncate rounded-md px-1 text-left text-[15px] font-semibold hover:bg-accent/60 max-md:flex-1 max-md:text-[14px]"
+      className="min-w-0 rounded-md px-1 text-left text-[15px] font-semibold hover:bg-accent/60 max-md:line-clamp-2 max-md:flex-1 max-md:text-[13px] max-md:leading-tight md:truncate"
       title="点一下改名"
       onClick={() => setEdit(c.title)}
     >
