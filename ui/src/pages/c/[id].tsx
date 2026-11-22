@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { ArtifactsFolder, PhoneBar, SessionChat, toast, useSession } from "@gerdr/core";
 import { Button } from "../../components/Button";
 import { Handoff } from "../../components/Handoff";
+import { MoreMenu } from "../../components/MoreMenu";
 import { Posts } from "../../components/Posts";
 import { run } from "../../lib/gerdr";
 import { STATUS_LABEL, useRun, type Content, type Status } from "../../lib/data";
@@ -111,12 +112,11 @@ export default function ContentPage() {
             >
               <FolderOpen className="size-4" />
             </Button>
-            <Button variant="ghost" size="icon" title="删掉这条内容" onClick={remove}>
-              <Trash2 className="size-4" />
-            </Button>
             <Button variant="ghost" size="icon" className="max-md:hidden" title={chatOpen ? "收起对话" : "展开对话"} onClick={() => setChatOpen(!chatOpen)}>
               {chatOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
             </Button>
+            {/* Deleting sits behind ⋯: a stray tap on a phone's crowded header shouldn't be one step from it */}
+            <MoreMenu items={[{ label: "删掉这条内容", icon: <Trash2 className="size-3.5" />, danger: true, onSelect: remove }]} />
           </div>
         </header>
       </PhoneBar>
