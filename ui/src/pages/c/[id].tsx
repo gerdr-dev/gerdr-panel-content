@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, ChevronDown, FolderOpen, MessageSquare, Pencil, Sparkles, Trash2 } from "lucide-react";
 import clsx from "clsx";
-import { ArtifactsFolder, PhoneBar, toast, useSession } from "@gerdr/core";
+import { ArtifactsFolder, PhoneBar, toast, useScreenContext, useSession } from "@gerdr/core";
 import { Button } from "../../components/Button";
 import { Handoff } from "../../components/Handoff";
 import { Menu, MoreMenu } from "../../components/MoreMenu";
@@ -28,6 +28,16 @@ export default function ContentPage() {
   const [rename, setRename] = useState<string>(); // the title being edited (undefined: not editing)
   const session = useSession(c?.session);
   const wide = useWide();
+  // What this page shows goes along with what the user says to the agent on the right (with the file open below and
+  // any selected text, which Gerdr adds itself), so "this one" / "this paragraph" needs no path
+  useScreenContext(
+    c
+      ? {
+          title: `「${c.title}」`,
+          text: [`内容 ${c.id}「${c.title}」，状态 ${STATUS_LABEL[c.status]}`, `文件夹：${c.folder}`, `在看：${tab === "files" ? "文件" : "发布记录"}`].join("\n"),
+        }
+      : null,
+  );
   // The content's conversation (opened empty if it has none) into the agent column. Once per content opened, not on
   // every change of its data, so switching to another conversation in that column by hand sticks
   const shown = useRef("");

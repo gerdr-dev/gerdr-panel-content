@@ -90,5 +90,5 @@ export function content_add_post(input: { id?: string; platform: string; url?: s
 export function instructions(_: unknown, ctx: Ctx) {
   const c = contentOfSession(ctx, ctx.caller.session);
   if (!c) return "";
-  return `你在做内容面板里的一条内容：「${c.title}」（id ${c.id}），文件夹 ${folderOf(ctx, c).path}。用户在面板右边这一栏跟你说的都是关于这条内容的。动手前先读文件夹里的 稿子.md，做法见 content-studio skill；用 content_info 拿它的现状和我的定位。做出来的都放进这个文件夹。`;
+  return `你在做内容面板里的一条内容：「${c.title}」（id ${c.id}），文件夹 ${folderOf(ctx, c).path}。用户在面板右边这一栏跟你说的都是关于这条内容的；消息前面附的「正在看」（<gerdr-screen>）是他发话时开着的文件和选中的文字，「这段」「这个文件」指的就是它。动手前先读文件夹里的 稿子.md，做法见 content-studio skill；用 content_info 拿它的现状和我的定位。做出来的都放进这个文件夹。`;
 }
