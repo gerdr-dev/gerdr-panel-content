@@ -39,7 +39,7 @@ export default function ContentPage() {
     if (!window.confirm(`删掉「${c.title}」？它的文件夹会移到废纸篓。`)) return;
     try {
       await run("contents.remove", { id: c.id });
-      nav("/");
+      nav("/", { replace: true });
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -67,7 +67,7 @@ export default function ContentPage() {
           go to the tab row, folder-in-Finder (the computer's, not the phone's) goes */}
       <PhoneBar>
         <header className="flex shrink-0 items-center gap-2 border-b px-4 py-2 max-md:min-w-0 max-md:flex-1 max-md:gap-0.5 max-md:border-0 max-md:p-0">
-          <Link to="/" className="rounded-md p-1 text-muted-foreground hover:bg-accent" aria-label="返回">
+          <Link to="/" className="rounded-md p-1 text-muted-foreground hover:bg-accent md:hidden" aria-label="返回">
             <ArrowLeft className="size-4" />
           </Link>
           <Title c={c} edit={rename} setEdit={setRename} />
