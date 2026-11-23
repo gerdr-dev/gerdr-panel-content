@@ -17,7 +17,7 @@
 - 新建：`contents.create {"text":"名字\n要做什么","ai":true}` —— 建好文件夹和 `稿子.md`，`ai` 为真就交给一个做内容的 AI 在那个文件夹里做（每条内容自己的对话，在内容页右边）。
 - 接着做 / 另写一篇：`contents.handoff {"id","note"}`、`contents.derive {"id","note"}`。
 - 查和改：`contents.list`、`contents.get {"id"}`、`contents.edit {"id","title?","status?"}`（status 是 draft / ready / published）、`contents.addPost`。
-- 定位：`profile.get`、`profile.save {"profile"}`；写法，写法就是 `skills/content-studio/` 下的文件（用户改的存 `user/skills/`）。
+- 定位：`profile.get`、`profile.save {"profile"}`；写法就是 `skills/content-studio/` 下的文件（用户改的存 `user/skills/`）。
 
 具体某一条的稿子由那条内容自己的 AI 写；面板 agent 负责分派、整理、跨几条内容的事（比如一个主题拆成几个平台各一条）。
 
