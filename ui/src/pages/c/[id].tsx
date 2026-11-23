@@ -1,20 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, ChevronDown, FolderOpen, MessageSquare, PanelRightClose, PanelRightOpen, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, FolderOpen, MessageSquare, Pencil, Sparkles, Trash2 } from "lucide-react";
 import clsx from "clsx";
-import { ArtifactsFolder, PhoneBar, SessionChat, toast, useSession } from "@gerdr/core";
+import { ArtifactsFolder, PhoneBar, toast, useSession } from "@gerdr/core";
 import { Button } from "../../components/Button";
 import { Handoff } from "../../components/Handoff";
 import { Menu, MoreMenu } from "../../components/MoreMenu";
 import { Posts } from "../../components/Posts";
-import { run } from "../../lib/gerdr";
+import { openChat, run } from "../../lib/gerdr";
+import { useWide } from "../../components/ContentList";
 import { STATUS_LABEL, STATUS_TONE, useRun, type Content, type Status } from "../../lib/data";
 
-type Tab = "files" | "chat" | "posts";
+type Tab = "files" | "posts";
 
 /**
- * One content: its name and status on top, its folder (files: brief, copy, images, videos; Markdown edited in place)
- * on the left, the conversation of the AI working on it on the right. On a narrow screen files / chat / posts are tabs.
+ * One content: its name and status on top, its folder (files: brief, copy, images, videos; Markdown edited in place) and
+ * its publish records. Its conversation is not drawn here: it goes in the panel agent's column on Gerdr's right
+ * (openChat), so that one column is where every talk in this panel happens and what's typed there is about the content
+ * on screen. On a phone that column is Gerdr's 助手 tab, reached with 对话 (opening it on its own would leave the page).
  */
 export default function ContentPage() {
   const { id = "" } = useParams();
@@ -22,9 +25,22 @@ export default function ContentPage() {
   const { data: c, error } = useRun<Content>("contents.get", { id });
   const [tab, setTab] = useState<Tab>("files");
   const [handoff, setHandoff] = useState(false);
-  const [chatOpen, setChatOpen] = useState(true);
   const [rename, setRename] = useState<string>(); // the title being edited (undefined: not editing)
   const session = useSession(c?.session);
+  const wide = useWide();
+  // The content's conversation (opened empty if it has none) into the agent column. Once per content opened, not on
+  // every change of its data, so switching to another conversation in that column by hand sticks
+  const shown = useRef("");
+  const talk = (id: string) =>
+    run<{ session: string }>("contents.chat", { id }).then(
+      (r) => openChat(r.session),
+      (e) => toast.error(e.message),
+    );
+  useEffect(() => {
+    if (!wide || !c || shown.current === c.id) return;
+    shown.current = c.id;
+    void talk(c.id);
+  }, [wide, c?.id]);
 
   // Opened: "AI 做完了" is seen
   useEffect(() => {
@@ -44,20 +60,8 @@ export default function ContentPage() {
       toast.error(e.message);
     }
   };
-  const chat = c.session ? (
-    <SessionChat id={c.session} className="h-full" />
-  ) : (
-    <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-      <Sparkles className="size-5 text-muted-foreground" />
-      <p className="text-[13px] text-muted-foreground">还没交给 AI。说一句要做什么，AI 就在这条内容的文件夹里做，做完你在这里接着跟它说。</p>
-      <Button onClick={() => setHandoff(true)}>
-        <Sparkles className="size-3.5" /> 交给 AI
-      </Button>
-    </div>
-  );
   const tabs: [Tab, string, string][] = [
     ["files", "文件", ""],
-    ["chat", "对话", "md:hidden"],
     ["posts", `发布记录${c.posts?.length ? ` ${c.posts.length}` : ""}`, ""],
   ];
   return (
@@ -98,9 +102,6 @@ export default function ContentPage() {
             >
               <FolderOpen className="size-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="max-md:hidden" title={chatOpen ? "收起对话" : "展开对话"} onClick={() => setChatOpen(!chatOpen)}>
-              {chatOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
-            </Button>
             {/* Renaming is also a tap on the title, which nobody guesses; deleting sits here so a stray tap can't reach it */}
             <MoreMenu
               items={[
@@ -124,16 +125,13 @@ export default function ContentPage() {
                   tab === t ? "border-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
               >
-                {t === "chat" && session?.status === "running" ? (
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="size-3 animate-pulse text-brand" /> {label}
-                  </span>
-                ) : (
-                  label
-                )}
+                {label}
               </button>
             ))}
             <div className="ml-auto flex items-center gap-1 md:hidden">
+              <button onClick={() => talk(c.id)} aria-label="对话" className="flex h-7 items-center gap-1 rounded-md bg-muted px-2 text-[12px]">
+                <MessageSquare className={clsx("size-3.5", session?.status === "running" && "animate-pulse text-brand")} /> 对话
+              </button>
               <StatusMenu status={c.status} onChange={setStatus} />
               <button
                 onClick={() => setHandoff(true)}
@@ -145,20 +143,15 @@ export default function ContentPage() {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             {tab === "files" && <ArtifactsFolder dir={c.folder} />}
-            {tab === "chat" && <div className="h-full md:hidden">{chat}</div>}
             {tab === "posts" && <Posts content={c} />}
           </div>
         </div>
-        {chatOpen && <aside className="w-[min(460px,45%)] shrink-0 border-l max-md:hidden">{chat}</aside>}
       </div>
       {handoff && (
         <Handoff
           content={c}
           onClose={() => setHandoff(false)}
-          onSent={() => {
-            setChatOpen(true);
-            setTab((t) => (t === "files" && window.innerWidth < 768 ? "chat" : t));
-          }}
+          onSent={(session) => openChat(session)}
         />
       )}
     </div>

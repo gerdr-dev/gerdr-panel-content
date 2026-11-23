@@ -139,27 +139,41 @@ export async function handoff(input: { id: string; note: string; fresh?: boolean
   const dir = await ensureFolder(ctx, c, `# ${c.title}\n`);
   const source = input.source ? find(loadContents(ctx), input.source) : undefined;
   let id = !input.fresh && c.session && ctx.sessions.get(c.session) ? c.session : "";
-  if (id) {
-    await ctx.sessions.send(id, input.note.trim(), { show: true });
-  } else {
-    const s = await ctx.sessions.start({
-      cwd: dir,
-      prompt: firstMessage(ctx, c, dir, input.note, source),
-      title: c.title,
-      artifactsDir: dir,
-      workspace: "none",
-      tags: { content: c.id },
-      ...(input.agent ? { agent: input.agent } : {}),
-    });
-    id = s.id;
-  }
+  if (id) await ctx.sessions.send(id, input.note.trim(), { show: true });
+  else id = await startFor(ctx, c, dir, firstMessage(ctx, c, dir, input.note, source), input.agent);
+  return { session: id };
+}
+
+/**
+ * The content's conversation, opened (with nothing said) when it has none yet: { id } → { session }. The page shows it
+ * in the panel agent's column whenever the content is open, so whatever the user types there is about this content.
+ * What it works on comes from `instructions` (agent.ts) when the agent starts; positioning from content_info.
+ */
+export async function chat(input: { id: string }, ctx: Ctx) {
+  const c = find(loadContents(ctx), input.id);
+  if (c.session && ctx.sessions.get(c.session)) return { session: c.session };
+  const dir = await ensureFolder(ctx, c, `# ${c.title}\n`);
+  return { session: await startFor(ctx, c, dir) };
+}
+
+/** Opens a conversation in the content's folder (tagged content=<id>) and makes it the content's current one. */
+async function startFor(ctx: Ctx, c: Content, dir: string, prompt?: string, agent?: string) {
+  const s = await ctx.sessions.start({
+    cwd: dir,
+    ...(prompt ? { prompt } : {}),
+    title: c.title,
+    artifactsDir: dir,
+    workspace: "none",
+    tags: { content: c.id },
+    ...(agent ? { agent } : {}),
+  });
   updateContents(ctx, (f) => {
     const x = find(f, c.id);
-    x.session = id;
-    x.sessions = [...new Set([...(x.sessions ?? []), id])];
+    x.session = s.id;
+    x.sessions = [...new Set([...(x.sessions ?? []), s.id])];
     x.updatedAt = now();
   });
-  return { session: id };
+  return s.id;
 }
 
 /** "另写一篇": a new content from this one, handed to AI with the note. { id, note } → the new content and its session */
